@@ -1,0 +1,2 @@
+To import data intp your mongoDB, make sure MongoDB is running.
+Run 'mongo bookAPI < bookJson.js' from the command line.
