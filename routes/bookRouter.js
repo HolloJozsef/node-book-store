@@ -1,26 +1,12 @@
 /*eslint-disable no=param-reasign*/
 const express = require('express');
-
+const bookController = require('../controllers/bookController')
 function routes(Book){
   const bookRouter = express.Router();
+  const controller = bookController(Book);
   bookRouter.route('/books')
-    .post((req,res)=>{
-      const book = new Book(req.body);
-      book.save();
-      return res.status(201).json(book);
-    })
-    .get((req,res)=>{
-      const query={};
-      if(req.query.genre){
-        query.genre = req.query.genre;
-      }
-      Book.find(query, (err,books)=>{
-        if(err){
-          return res.send(err);
-        }
-        return res.json(books);
-      });
-    });
+    .post(controller.post)
+    .get(controller.get);
   bookRouter.use('/books/:bookId',(req,res,next)=>{
     Book.findById(req.params.bookId,(err,book)=>{
       if(err){
@@ -34,7 +20,12 @@ function routes(Book){
     });
   })
   bookRouter.route('/books/:bookId')
-    .get((req,res)=>{res.json(req.book);})
+    .get((req,res)=>{
+      const returnBook = req.book.toJSON();
+      returnBook.links= {};
+      returnBook.links.FilterByThisGenre = `http://${req.headers.host}/api/books/?genre=${req.book.genre}`
+      res.json(returnBook);
+    })
     .put((req,res)=>{
       const {book} = req;
       book.title=req.body.title;
@@ -68,6 +59,14 @@ function routes(Book){
         return res.json(book);
       });
     })
+    .delete((req,res)=>{
+      req.book.remove((err)=>{
+        if(err){
+          return res.send(err);
+        }
+        return res.sendStatus(204);
+      });
+    });
 
   return bookRouter;
 }
